@@ -2,6 +2,48 @@
 #include "obd2.h"
 
 // Utilities
+void setCharging(bool enable) {
+
+	PMIC pmic;
+
+	// DisableCharging turns off charging. DisableBATFET completely disconnects the battery.
+	if (enable) {
+		pmic.enableCharging();
+		pmic.enableBATFET();
+	}
+	else {
+		pmic.disableCharging();
+		pmic.disableBATFET();
+	}
+
+	// Disabling the watchdog is necessary, otherwise it will kick in and turn
+	// charing at random times, even when sleeping.
+
+	// This disables both the watchdog and the charge safety timer in
+	// Charge Termination/Timer Control Register REG05
+	// pmic.disableWatchdog() disables the watchdog, but doesn't disable the
+	// charge safety timer, so the red LED will start blinking slowly after
+	// 1 hour if you don't do both.
+	byte DATA = pmic.readChargeTermRegister();
+
+	if (enable) {
+		DATA |= 0b00111000;
+	}
+	else {
+		// 0b11001110 = disable watchdog
+		// 0b11000110 = disable watchdog and charge safety timer
+		DATA &= 0b11000110;
+	}
+
+	// This would be easier if pmic.writeRegister wasn't private (or disable
+	// charge safety timer had an exposed method
+	Wire3.beginTransmission(PMIC_ADDRESS);
+	Wire3.write(CHARGE_TIMER_CONTROL_REGISTER);
+	Wire3.write(DATA);
+	Wire3.endTransmission(true);
+
+}
+
 bool isWithinNumberRange(float number, int A, int B) {
     if (number >= A && number <= B) {
         return true;
@@ -46,13 +88,13 @@ int getNextPID(int currentPid) {
     // First PID is 0x01 afer 0x00;
     if (pids_enabled_pid_found) return 0x01;
 
-    if (newPid == 0x60) newPid = 0x00;
+    if (newPid == PID_SIZE) newPid = 0x00;
 
     // Other PIDs
     while (increment > 0) {
         newPid++;
         increment--;
-        if (newPid == 0x60) newPid = 0x00;
+        if (newPid == PID_SIZE) newPid = 0x00;
     }
 
     return newPid;

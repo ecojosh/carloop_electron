@@ -2,6 +2,7 @@
 
 #define PID_SIZE 0x60
 
+void setCharging(bool enable);
 bool isWithinNumberRange(float number, int A, int B);
 String intToStr(int integer);
 String fToStr(float f);

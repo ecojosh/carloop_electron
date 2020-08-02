@@ -1,17 +1,23 @@
 #include <carloop.h>
+#include <locator.h>
 #include "obd2.h"
 #include "helper.h"
+#include "Serial4/Serial4.h"
+
+// DeviceID: 4f002f000550483553353520
 
 // Helper Functions
+void resetOBDSupportData();
 int sendObdRequest();
 void getObdResponse(int request_pid);
 void storeMessageValue(byte data[]);
 void setPidEnabled(bool (&pid_array)[PID_SIZE]);
-// DeviceID: 4f002f000550483553353520
 
 // System
 SYSTEM_MODE(MANUAL);
 SYSTEM_THREAD(ENABLED);
+
+Locator locator;
 
 // carloop
 Carloop<CarloopRevision2> carloop;
@@ -32,21 +38,13 @@ void doAlgorithms() {
 }
 
 void setup() {
-
+    setCharging(false);
+    pinMode(WKP, INPUT_PULLDOWN);
     Serial.begin(9600);
-
+    Serial4.begin(9600);
     carloop.begin();
-
-    // init arrays
-    for (unsigned i = 0; i < PID_SIZE; i++) {
-      alldata[i] = -1;
-      pid_enabled[i] = 0;
-    }
-
-    // Enable Read Supported PIDs
-    for (unsigned i=0; i<sizeof(PID_SUPPORT_PIDS)/sizeof(PID_SUPPORT_PIDS[0]); i++) {
-        pid_enabled[PID_SUPPORT_PIDS[i]] = 1;
-    }
+    resetOBDSupportData();
+    //if (Particle.connected) locator.publishLocation();
 }
 
 void loop() {
@@ -75,6 +73,42 @@ void loop() {
 
         Serial.print(content);
         print_delay = millis();
+    }
+
+    // results through Serial4
+    for (unsigned i=0; i < PID_SIZE; i++) {
+        if (alldata[i] == -1) continue;
+
+    }
+
+    SystemSleepConfiguration config;
+    config.mode(SystemSleepMode::HIBERNATE)
+        .gpio(WKP, RISING)
+        .duration(30s);
+
+    // Sleep when pin XX is PULLED_DOWN (LOW)
+    if (!digitalRead(WKP)) {
+        while (!digitalRead(WKP)) {
+            //System.sleep(SLEEP_MODE_SOFTPOWEROFF);
+            //System.reset();
+            System.sleep(config);
+            delay(1000);
+            setCharging(false);
+        }
+        setup();
+    }
+}
+
+void resetOBDSupportData() {
+    // init arrays
+    for (unsigned i = 0; i < PID_SIZE; i++) {
+      alldata[i] = -1;
+      pid_enabled[i] = 0;
+    }
+
+    // Enable Read Supported PIDs
+    for (unsigned i=0; i<sizeof(PID_SUPPORT_PIDS)/sizeof(PID_SUPPORT_PIDS[0]); i++) {
+        pid_enabled[PID_SUPPORT_PIDS[i]] = 1;
     }
 }
 
