@@ -1,6 +1,7 @@
 # Custom
 src/carloop_electron.cpp
 target/
+lib/
 
 # Prerequisites
 *.d
