@@ -1,7 +1,17 @@
 #include "helper.h"
 #include "obd2.h"
+#include <Arduino.h>
+#define ARDUINOJSON_ENABLE_PROGMEM 0
+#include <ArduinoJson.h>
 
 // Utilities
+void setLEDTheme() {
+    LEDSystemTheme theme;
+    theme.setColor(LED_SIGNAL_NETWORK_OFF, RGB_COLOR_GREEN);
+    theme.setPattern(LED_SIGNAL_NETWORK_OFF, LED_PATTERN_SOLID);
+    theme.apply();
+}
+
 void setCharging(bool enable) {
 
 	PMIC pmic;
@@ -58,35 +68,81 @@ String intToStr(int integer) {
 }
 
 String fToStr(float f) {
+    if (f == floor(f)) return intToStr(floor(f));
+
     String string = String(f,1);
     //sprintf(string, "%.01f", d);
     return string;
 }
 
-int getNextPID(int currentPid) {
+// Takes into account send_pids
+int getNextPID(int currentPid, bool all, uint8_t *send_pids, unsigned send_pid_size) {
 
-    bool pids_enabled_pid_found = false;
+    static unsigned current_send_pid_index = 0;
+
+    // All supported PIDs
+    if (all || send_pids == NULL || send_pid_size == 0) {
+        current_send_pid_index = 0;
+        return basicGetNextPID(currentPid);
+    }
+
+    bool support_pid_found = false;
+
+    // Support PIDs are always queried
+    for (unsigned i=0; i<sizeof(PID_SUPPORT_PIDS)/sizeof(PID_SUPPORT_PIDS[0]); i++) {
+        
+        // Second Time Found (We just finished a support PID, so next Support PID is prioritized)
+        if (support_pid_found)
+            return PID_SUPPORT_PIDS[i];
+
+        // First Time Found (Current PID is a Support PID)
+        if (currentPid == PID_SUPPORT_PIDS[i])
+            support_pid_found = true;
+
+    }
+
+    // Right after last Support PID is the first send_pid
+    if (support_pid_found) {
+        current_send_pid_index = 0;
+        return send_pids[current_send_pid_index];
+    }
+
+    current_send_pid_index++;
+
+    // Support PID after last send_pids index
+    if (current_send_pid_index == send_pid_size) {
+        current_send_pid_index = 0;
+        return PID_SUPPORT_PIDS[0];
+    }
+
+    return send_pids[current_send_pid_index];
+}
+
+// Above func but all=true
+int basicGetNextPID(int currentPid) {
+
+    bool support_pid_found = false;
     int increment = 1;
-    int newPid = currentPid; 
+    int newPid = currentPid;
 
     // PIDs Enabled PIDs first
     for (unsigned i=0; i<sizeof(PID_SUPPORT_PIDS)/sizeof(PID_SUPPORT_PIDS[0]); i++) {
 
-        // Second Time Found
-        if (pids_enabled_pid_found)
+        // Second Time Found (We just finished a support PID, so next Support PID is prioritized)
+        if (support_pid_found)
             return PID_SUPPORT_PIDS[i];
 
         // Skip PIDs Enabled PID
         if (currentPid + 1 == PID_SUPPORT_PIDS[i])
             increment++;
 
-        // First Time Found
+        // First Time Found (Current PID is a Support PID)
         if (currentPid == PID_SUPPORT_PIDS[i])
-            pids_enabled_pid_found = true;
+            support_pid_found = true;
     }
 
     // First PID is 0x01 afer 0x00;
-    if (pids_enabled_pid_found) return 0x01;
+    if (support_pid_found) return 0x01;
 
     if (newPid == PID_SIZE) newPid = 0x00;
 

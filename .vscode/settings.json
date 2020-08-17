@@ -2,9 +2,12 @@
     "extensions.ignoreRecommendations": true,
     "cortex-debug.openocdPath": "${command:particle.getDebuggerOpenocdPath}",
     "files.associations": {
-        "*.ino": "cpp"
+        "*.ino": "cpp",
+        "ranges": "cpp",
+        "sstream": "cpp",
+        "algorithm": "cpp"
     },
     "particle.targetPlatform": "electron",
-    "particle.targetDevice": "4f002f000550483553353520",
-    "particle.firmwareVersion": "2.0.0-rc.1"
+    "particle.firmwareVersion": "2.0.0-rc.1",
+    "particle.targetDevice": "4f002f000550483553353520"
 }

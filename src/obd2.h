@@ -117,6 +117,7 @@ enum {
 };
 
 const int PID_SUPPORT_PIDS[] = {PIDS_SUPPORT_01_20, PIDS_SUPPORT_21_40, PIDS_SUPPORT_41_60};
+const unsigned PID_SUPPORT_PIDS_SIZE = 3;
 
 // Sourced from https://github.com/sandeepmistry/arduino-OBD2/blob/master/src/OBD2.cpp
 
