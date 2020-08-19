@@ -5,9 +5,10 @@
 #include <ArduinoJson.h>
 
 // Utilities
-void setLEDTheme() {
+void setLEDTheme(bool ready) {
     LEDSystemTheme theme;
-    theme.setColor(LED_SIGNAL_NETWORK_OFF, RGB_COLOR_GREEN);
+    if (ready) theme.setColor(LED_SIGNAL_NETWORK_OFF, RGB_COLOR_GREEN);
+    else theme.setColor(LED_SIGNAL_NETWORK_OFF, RGB_COLOR_RED);
     theme.setPattern(LED_SIGNAL_NETWORK_OFF, LED_PATTERN_SOLID);
     theme.apply();
 }

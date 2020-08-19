@@ -4,7 +4,7 @@
 #define EMPTY_VALUE -100.1
 #define EMPTY_STRING fToStr(EMPTY_VALUE)
 
-void setLEDTheme();
+void setLEDTheme(bool ready);
 void setCharging(bool enable);
 bool isWithinNumberRange(float number, int A, int B);
 String intToStr(int integer);

@@ -8,7 +8,7 @@
 #include "Serial4/Serial4.h"
 
 #define FF_LOCATOR_ENABLED false
-#define FF_DEBUG_PRINT true
+#define FF_DEBUG_PRINT false
 
 // DeviceID: 4f002f000550483553353520
 
@@ -27,7 +27,7 @@ String dataToJsonStr();
 
 // System
 SYSTEM_MODE(MANUAL);
-SYSTEM_THREAD(DISABLED);
+SYSTEM_THREAD(ENABLED);
 
 Locator locator;
 
@@ -54,7 +54,7 @@ void doAlgorithms() {
 }
 
 void setup() {
-    setLEDTheme();
+    setLEDTheme(false);
     setCharging(false);
     pinMode(WKP, INPUT_PULLDOWN);
     Serial4.begin(230400);
@@ -73,21 +73,28 @@ void loop() {
     static auto loop_delay = millis();
     if (millis() - loop_delay > 100) {
         debug_print("Test all: " + String(send_all_pids));
+
         if (carloop.can().errorStatus() != CAN_NO_ERROR) {
+
+            // Car isn't ready first time
+            if (can_ready) setLEDTheme(false);
             can_ready = false;
+
         } else {
 
-            // Car is ready again
-            if (!can_ready) setReadSupportPIDs();
-
+            // Car is ready first time
+            if (!can_ready) {
+                setLEDTheme(true);
+                setReadSupportPIDs();
+            }
             can_ready = true;
+
             carloop.update();
             int currentPid = sendObdRequest();
             getObdResponse(currentPid);
             //doAlgorithms();
         }
         loop_delay = millis();
-
     }
 
     // print results through Serial4
@@ -180,6 +187,10 @@ void getObdResponse(int request_pid) {
     bool message_delayed = true;
     while (carloop.can().receive(message) || message_delayed) {
 
+        if (millis() - delay_time > 100) {
+            message_delayed = false;
+        }
+
         if (message.id != OBD_REPLY_ID) continue;
 
         // If we find exactly what we are asking for
@@ -190,17 +201,34 @@ void getObdResponse(int request_pid) {
 
         // Not quite what we asked for but useful. Keep looking
         for (unsigned i=0; i<PID_SIZE; i++) {
-            if (message.data[2] == pid_enabled[i]) {
+            if (message.data[2] >= PID_SIZE) break;
+
+            if (pid_enabled[message.data[2]]) {
                 storeMessageValue(message.data);
                 break;
             }
+        }
+    }
+}
+
+/*
+void getObdResponse(int request_pid) {
+    CANMessage message;
+
+    auto delay_time = millis();
+    bool message_delayed = true;
+    while (carloop.can().receive(message) || message_delayed) {
+        //Serial.println("RECEIVED");
+        if(message.id == OBD_REPLY_ID && message.data[2] == request_pid) {
+            storeMessageValue(message.data);
+            break;
         }
 
         if (millis() - delay_time > 100) {
             message_delayed = false;
         }
     }
-}
+}*/
 
 void storeMessageValue(byte data[8]) {
 
