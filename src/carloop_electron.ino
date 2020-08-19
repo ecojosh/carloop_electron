@@ -9,6 +9,7 @@
 
 #define FF_LOCATOR_ENABLED false
 #define FF_DEBUG_PRINT false
+#define SUPPORT_PID_REQUEST_PERIOD_SECONDS 30
 
 // DeviceID: 4f002f000550483553353520
 
@@ -17,7 +18,7 @@ void debug_print(String msg) {
     if (FF_DEBUG_PRINT) Serial.println(msg);
 }
 void resetOBDSupportData();
-void setReadSupportPIDs();
+void setReadSupportPIDsLoop(bool override = false);
 int sendObdRequest();
 void getObdResponse(int request_pid);
 void storeMessageValue(byte data[8]);
@@ -68,6 +69,7 @@ void setup() {
 void loop() {
 
     receiveSendPIDsLoop();
+    setReadSupportPIDsLoop();
 
     // carloop
     static auto loop_delay = millis();
@@ -85,7 +87,7 @@ void loop() {
             // Car is ready first time
             if (!can_ready) {
                 setLEDTheme(true);
-                setReadSupportPIDs();
+                setReadSupportPIDsLoop(true);
             }
             can_ready = true;
 
@@ -144,14 +146,20 @@ void resetOBDSupportData() {
       pid_enabled[i] = false;
     }
 
-    setReadSupportPIDs();
+    setReadSupportPIDsLoop();
 }
 
-void setReadSupportPIDs() {
+void setReadSupportPIDsLoop(bool override) {
+
+    static auto wait = millis();
+    if (millis() - wait < SUPPORT_PID_REQUEST_PERIOD_SECONDS && !override) return;
+
     // Enable Read Supported PIDs
     for (unsigned i=0; i<PID_SUPPORT_PIDS_SIZE; i++) {
         pid_enabled[PID_SUPPORT_PIDS[i]] = true;
     }
+
+    wait = millis();
 }
 
 int sendObdRequest() {
@@ -187,7 +195,7 @@ void getObdResponse(int request_pid) {
     bool message_delayed = true;
     while (carloop.can().receive(message) || message_delayed) {
 
-        if (millis() - delay_time > 100) {
+        if (millis() - delay_time > 50) {
             message_delayed = false;
         }
 
@@ -210,25 +218,6 @@ void getObdResponse(int request_pid) {
         }
     }
 }
-
-/*
-void getObdResponse(int request_pid) {
-    CANMessage message;
-
-    auto delay_time = millis();
-    bool message_delayed = true;
-    while (carloop.can().receive(message) || message_delayed) {
-        //Serial.println("RECEIVED");
-        if(message.id == OBD_REPLY_ID && message.data[2] == request_pid) {
-            storeMessageValue(message.data);
-            break;
-        }
-
-        if (millis() - delay_time > 100) {
-            message_delayed = false;
-        }
-    }
-}*/
 
 void storeMessageValue(byte data[8]) {
 

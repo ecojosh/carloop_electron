@@ -21,8 +21,7 @@ void setCharging(bool enable) {
 	if (enable) {
 		pmic.enableCharging();
 		pmic.enableBATFET();
-	}
-	else {
+	} else {
 		pmic.disableCharging();
 		pmic.disableBATFET();
 	}
@@ -39,8 +38,7 @@ void setCharging(bool enable) {
 
 	if (enable) {
 		DATA |= 0b00111000;
-	}
-	else {
+	} else {
 		// 0b11001110 = disable watchdog
 		// 0b11000110 = disable watchdog and charge safety timer
 		DATA &= 0b11000110;
