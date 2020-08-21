@@ -113,6 +113,8 @@ enum {
   ENGINE_FUEL_RATE                                  = 0x5e,
   EMISSION_REQUIREMENT_TO_WHICH_VEHICLE_IS_DESIGNED = 0x5f,
 
+  CUSTOM_CARLOOP_BATTERY_VOLTAGE                    = 0x60,
+
   // more PIDs can be added from: https://en.wikipedia.org/wiki/OBD-II_PIDs
 };
 
@@ -217,6 +219,7 @@ const char PID_NAME_0x5c[] PROGMEM = "Engine oil temperature";
 const char PID_NAME_0x5d[] PROGMEM = "Fuel injection timing";
 const char PID_NAME_0x5e[] PROGMEM = "Engine fuel rate";
 const char PID_NAME_0x5f[] PROGMEM = "Emission requirements to which vehicle is designed";
+const char PID_NAME_0x60[] PROGMEM = "Carloop Battery Voltage";
 
 const char* const PID_NAME_MAPPER[] PROGMEM = {
   PID_NAME_0x00,
@@ -315,6 +318,7 @@ const char* const PID_NAME_MAPPER[] PROGMEM = {
   PID_NAME_0x5d,
   PID_NAME_0x5e,
   PID_NAME_0x5f,
+  PID_NAME_0x60,
 };
 
 const char PERCENTAGE[] PROGMEM = "%";
@@ -432,4 +436,6 @@ const char* const PID_UNIT_MAPPER[] PROGMEM = {
   DEGREES,
   LPH,
   NULL,
+  // carloop batt voltage
+  VOLTS,
 };

@@ -9,6 +9,7 @@
 
 #define FF_LOCATOR_ENABLED false
 #define FF_DEBUG_PRINT false
+#define FF_SNIFF_MODE false
 #define SUPPORT_PID_REQUEST_PERIOD_SECONDS 30
 
 // DeviceID: 4f002f000550483553353520
@@ -25,6 +26,7 @@ void storeMessageValue(byte data[8]);
 void setPidEnabled(uint8_t pid);
 void receiveSendPIDsLoop();
 String dataToJsonStr();
+void sniff_loop();
 
 // System
 SYSTEM_MODE(MANUAL);
@@ -50,8 +52,9 @@ bool can_ready = false;
 int current_gear = 0;
 
 // algorithms
-void doAlgorithms() {
-    current_gear = getCurrentGear(alldata[VEHICLE_SPEED], alldata[ENGINE_RPM]);
+void doCustomAlgorithms() {
+    //current_gear = getCurrentGear(alldata[VEHICLE_SPEED], alldata[ENGINE_RPM]);
+    alldata[CUSTOM_CARLOOP_BATTERY_VOLTAGE] = carloop.battery();
 }
 
 void setup() {
@@ -64,9 +67,17 @@ void setup() {
     if (FF_LOCATOR_ENABLED) {
         //if (Particle.connected) locator.publishLocation();
     }
+    if (FF_SNIFF_MODE) {
+        send_one_message();
+    }
 }
 
 void loop() {
+
+    if (FF_SNIFF_MODE) {
+        sniff_loop();
+        return;
+    }
 
     receiveSendPIDsLoop();
     setReadSupportPIDsLoop();
@@ -94,7 +105,7 @@ void loop() {
             carloop.update();
             int currentPid = sendObdRequest();
             getObdResponse(currentPid);
-            //doAlgorithms();
+            doCustomAlgorithms();
         }
         loop_delay = millis();
     }
@@ -367,4 +378,33 @@ String dataToJsonStr() {
 
     serializeJson(json, output);
     return output;
+}
+
+void sniff_loop() {
+    auto time = millis();
+    CANMessage message;
+    while (carloop.can().receive(message) || millis() - time < 10000) {
+        String str = "";
+        for (unsigned i=0; i<8; i++) {
+            if (message.data[i] < 0x10) str += "0";
+            str += String(int(message.data[i]), HEX);
+            str += " ";
+        }
+        Serial.println(str);
+    }
+}
+
+void send_one_message() {
+    CANMessage message;
+    //fd ff 00 07 63 00 00 00 
+    message.data[0] = 0xfd;
+    message.data[1] = 0xff;
+    message.data[2] = 0x00;
+    message.data[3] = 0x07;
+    message.data[4] = 0x63;
+    message.data[5] = 0x00;
+    message.data[6] = 0x00;
+    message.data[7] = 0x00;
+    message.len = 8;
+    carloop.can().transmit(message);
 }
