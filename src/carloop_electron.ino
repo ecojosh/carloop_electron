@@ -85,7 +85,6 @@ void loop() {
     // carloop
     static auto loop_delay = millis();
     if (millis() - loop_delay > 100) {
-        debug_print("Test all: " + String(send_all_pids));
 
         if (carloop.can().errorStatus() != CAN_NO_ERROR) {
 
@@ -163,7 +162,7 @@ void resetOBDSupportData() {
 void setReadSupportPIDsLoop(bool override) {
 
     static auto wait = millis();
-    if (millis() - wait < SUPPORT_PID_REQUEST_PERIOD_SECONDS && !override) return;
+    if (millis() - wait < SUPPORT_PID_REQUEST_PERIOD_SECONDS * 1000 && !override) return;
 
     // Enable Read Supported PIDs
     for (unsigned i=0; i<PID_SUPPORT_PIDS_SIZE; i++) {
@@ -182,8 +181,10 @@ int sendObdRequest() {
     currentPidIndex = getNextPID(currentPidIndex, send_all_pids, send_pids, send_pid_size);
 
     // Only query PIDs that are supported
-    while (!pid_enabled[currentPidIndex]) {
-        currentPidIndex = getNextPID(currentPidIndex, send_all_pids, send_pids);
+    if (send_all_pids) {
+        while (!pid_enabled[currentPidIndex]) {
+            currentPidIndex = getNextPID(currentPidIndex, send_all_pids, send_pids);
+        }
     }
 
     debug_print("Request PID: " + String(request_pid));
@@ -267,6 +268,7 @@ void setPidEnabled(uint8_t pid) {
         unsigned index = (0x20 - i + shift);
         if (index >= PID_SIZE) continue;
         pid_enabled[index] = (mask & (1<<i)) != 0;
+        if (pid_enabled[index]) debug_print("Support PID: " + String(index));
     }
 }
 

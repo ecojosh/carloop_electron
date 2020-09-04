@@ -3,6 +3,8 @@
         {
             "name": "Mac",
             "includePath": [
+                "/Users/Joshua/Library/Arduino15/packages/esp8266/tools/**",
+                "/Users/Joshua/Library/Arduino15/packages/esp8266/hardware/esp8266/2.4.2/**",
                 "${workspaceFolder}/**"
             ],
             "defines": [],
@@ -11,7 +13,8 @@
             "cStandard": "c11",
             "cppStandard": "gnu++14",
             "intelliSenseMode": "clang-x64",
-            "configurationProvider": "particle.particle-vscode-core"
+            "configurationProvider": "particle.particle-vscode-core",
+            "forcedInclude": []
         }
     ],
     "version": 4

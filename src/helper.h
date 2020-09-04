@@ -1,6 +1,5 @@
 #include "Particle.h"
 
-#define PID_SIZE 0x61
 #define EMPTY_VALUE -100.1
 #define EMPTY_STRING fToStr(EMPTY_VALUE)
 

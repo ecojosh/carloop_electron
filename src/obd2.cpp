@@ -3,7 +3,7 @@
 // Sourced from https://github.com/sandeepmistry/arduino-OBD2/blob/master/src/OBD2.cpp
 
 String getPidName(uint8_t pid) {
-  if (pid > 0x5f) {
+  if (pid >= PID_SIZE) {
     return "Unknown";
   }
 
@@ -24,7 +24,7 @@ String getPidName(uint8_t pid) {
 }
 
 String getPidUnits(uint8_t pid) {
-  if (pid > 0x5f) {
+  if (pid >= PID_SIZE) {
     return "";
   }
 

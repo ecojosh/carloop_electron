@@ -7,6 +7,8 @@
 #define PROGMEM
 #endif
 
+#define PID_SIZE 0x61
+
 String getPidName(uint8_t pid);
 String getPidUnits(uint8_t pid);
 float getPidValue(uint8_t pid, uint8_t value[4]);
